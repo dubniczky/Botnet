@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 type Command struct {
@@ -15,6 +16,8 @@ type Command struct {
 }
 
 var commander_url = "http://127.1:3000/command"
+var bot_name = "testbot"
+var pollInterval uint32 = 10
 
 func pollCommand() (Command, error) {
 	resp, err := http.Get(commander_url)
@@ -36,12 +39,20 @@ func pollCommand() (Command, error) {
 	return command, nil
 }
 
-func main() {
+func execute() error {
 	command, err := pollCommand()
 	if err != nil {
 		log.Println(err)
-		return
+		return err
 	}
 	
 	log.Println(command.Cmd)
+	return nil
+}
+
+func main() {
+	log.Printf("Starting polling cycle... (%ds)\n", pollInterval)
+	for range time.Tick(time.Second * time.Duration(pollInterval)) {
+        execute()
+    }
 }
