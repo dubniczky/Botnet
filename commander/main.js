@@ -8,7 +8,7 @@ const app = express()
 app.get('/command', (req, res) => {
     res.send({
         id: uuid.v4(),
-        command: 'ls',
+        cmd: 'ls',
         time: 0,
         signature: '-'
     })
