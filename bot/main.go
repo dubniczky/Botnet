@@ -15,6 +15,7 @@ type Command struct {
 	Cmd string
 	Time int
 	Signature string
+	Once bool
 }
 
 var commander_url = "http://127.1:3000/command"
@@ -22,6 +23,8 @@ var bot_name = "testbot"
 var spawnedShell = "bash"
 var pollInterval uint32 = 10
 var debug = true //commands are not executed, only printed
+
+var executedIds []string
 
 func pollCommand() (Command, error) {
 	resp, err := http.Get(commander_url)
@@ -53,11 +56,33 @@ func shellexec(command string) (string, string, error) {
     return stdout.String(), stderr.String(), err
 }
 
+func listContains(s []string, e string) bool {
+    for _, a := range s {
+        if a == e {
+            return true
+        }
+    }
+    return false
+}
+
 func execute() error {
 	command, err := pollCommand()
 	if err != nil {
 		log.Println(err)
 		return err
+	}
+
+	if command.Id == "" {
+		return nil
+	}
+
+	if command.Once {
+		if listContains(executedIds, command.Id) {
+			log.Printf("Command duplicate received. Skipping %s\n", command.Id)
+			return nil
+		}
+
+		executedIds = append(executedIds, command.Id)
 	}
 	
 	if debug {
@@ -74,7 +99,9 @@ func execute() error {
 }
 
 func main() {
+	executedIds = make([]string, 0)
 	log.Printf("Starting polling cycle... (%ds)\n", pollInterval)
+	execute()
 	for range time.Tick(time.Second * time.Duration(pollInterval)) {
         execute()
     }
