@@ -1,8 +1,11 @@
 node_modules/
 build/
 dist/
+.vscore/
 
 # Secrets
 secrets/*
 !secrets/.gitkeep
 bot/certificate.go
+
+.DS_Store
